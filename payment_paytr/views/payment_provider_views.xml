@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="payment_provider_form_paytr" model="ir.ui.view">
+        <field name="name">PAYTR Provider Form</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form"/>
+        <field name="arch" type="xml">
+            <group name="provider_credentials" position="inside">
+                <group name="paytr_credentials" invisible="code != 'paytr'">
+                    <field
+                        name="paytr_merchant_id"
+                        required="code == 'paytr' and state != 'disabled'"
+                    />
+                    <field
+                        name="paytr_merchant_key"
+                        password="True"
+                        required="code == 'paytr' and state != 'disabled'"
+                    />
+                    <field
+                        name="paytr_merchant_salt"
+                        password="True"
+                        required="code == 'paytr' and state != 'disabled'"
+                    />
+                    <field name="paytr_test_mode"/>
+                    <div class="text-muted mb-2" colspan="2">
+                        PAYTR endpoint mode is driven by provider state:
+                        <b>Test Mode</b> when state is <b>Test</b>, and <b>Live</b> when state is
+                        <b>Enabled</b>.
+                    </div>
+                </group>
+            </group>
+        </field>
+    </record>
+
+</odoo>

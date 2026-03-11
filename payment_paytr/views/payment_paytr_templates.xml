@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="redirect_form">
+        <form t-att-action="api_url" method="post">
+            <t t-foreach="paytr_values" t-as="paytr_param">
+                <input type="hidden" t-att-name="paytr_param" t-att-value="paytr_values[paytr_param]"/>
+            </t>
+        </form>
+    </template>
+
+</odoo>
