@@ -15,7 +15,8 @@ from odoo.tools.urls import urljoin as url_join
 
 from odoo.addons.payment import utils as payment_utils
 from odoo.addons.payment.logging import get_payment_logger
-from odoo.addons.payment_paytr import const
+
+from .. import const
 
 
 _logger = get_payment_logger(__name__, sensitive_keys=const.SENSITIVE_LOG_KEYS)

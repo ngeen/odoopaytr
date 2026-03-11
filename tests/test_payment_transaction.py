@@ -8,9 +8,9 @@ from unittest.mock import patch
 
 from odoo.tests import tagged
 
-from odoo.addons.payment_paytr import const
-from odoo.addons.payment_paytr.models.payment_transaction import PaymentTransaction
-from odoo.addons.payment_paytr.tests.common import PaytrCommon
+from .. import const
+from ..models.payment_transaction import PaymentTransaction
+from .common import PaytrCommon
 
 
 @tagged('post_install', '-at_install')

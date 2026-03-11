@@ -3,9 +3,10 @@
 from odoo.tests import tagged
 
 from odoo.addons.payment.tests.http_common import PaymentHttpCommon
-from odoo.addons.payment_paytr import const
-from odoo.addons.payment_paytr.controllers.main import PaytrController
-from odoo.addons.payment_paytr.tests.common import PaytrCommon
+
+from .. import const
+from ..controllers.main import PaytrController
+from .common import PaytrCommon
 
 
 @tagged('post_install', '-at_install')

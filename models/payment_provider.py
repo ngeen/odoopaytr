@@ -4,7 +4,7 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools.urls import urljoin as url_join
 
-from odoo.addons.payment_paytr import const
+from .. import const
 
 
 class PaymentProvider(models.Model):
