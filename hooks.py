@@ -1,9 +1,5 @@
-from odoo import SUPERUSER_ID, api
-
-
-def post_init_hook(cr, registry):
+def post_init_hook(env):
     """Ensure a PAYTR provider exists after module installation/upgrade."""
-    env = api.Environment(cr, SUPERUSER_ID, {})
     Provider = env['payment.provider'].sudo()
 
     card_method = env.ref('payment.payment_method_card', raise_if_not_found=False)
