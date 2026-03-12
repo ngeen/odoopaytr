@@ -80,7 +80,7 @@ class PaymentTransaction(models.Model):
         payload = {
             'merchant_id': provider.paytr_merchant_id,
             'user_ip': self._paytr_get_customer_ip(),
-            'merchant_oid': self.reference,
+            'merchant_oid': self._paytr_get_merchant_oid(),
             'email': self.partner_email,
             'payment_amount': payment_amount,
             'currency': const.SUPPORTED_PAYTR_CURRENCY,
@@ -112,6 +112,11 @@ class PaymentTransaction(models.Model):
         if not iframe_token:
             raise ValidationError(_("PAYTR did not return an iframe token."))
         return iframe_token
+
+    def _paytr_get_merchant_oid(self):
+        self.ensure_one()
+        # PAYTR expects merchant_oid to be strictly alphanumeric.
+        return f'TX{self.id}'
 
     def _paytr_get_return_urls(self):
         self.ensure_one()
@@ -182,7 +187,13 @@ class PaymentTransaction(models.Model):
     def _extract_reference(self, provider_code, payment_data):
         if provider_code != 'paytr':
             return super()._extract_reference(provider_code, payment_data)
-        return payment_data.get('merchant_oid') or payment_data.get('reference')
+        merchant_oid = payment_data.get('merchant_oid') or payment_data.get('reference')
+        if not merchant_oid:
+            return None
+        if merchant_oid.startswith('TX') and merchant_oid[2:].isdigit():
+            tx = self.browse(int(merchant_oid[2:])).exists()
+            return tx.reference if tx else None
+        return merchant_oid
 
     def _extract_amount_data(self, payment_data):
         if self.provider_code != 'paytr':
