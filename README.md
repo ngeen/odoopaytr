@@ -1,12 +1,12 @@
 # payment_paytr (Odoo 19 Community)
 
-PAYTR Direct API payment provider for Odoo 19 Community (`payment` + `website_sale`).
+PAYTR iFrame API payment provider for Odoo 19 Community (`payment` + `website_sale`).
 
 ## Features
 
 - Provider code: `paytr`
-- Redirect checkout to `https://www.paytr.com/odeme`
-- 3D-only flow (`non_3d=0`)
+- iFrame token flow via `https://www.paytr.com/odeme/api/get-token`
+- Checkout redirect to `https://www.paytr.com/odeme/guvenli/{token}`
 - TRY-only support (`TL` on PAYTR side)
 - Installment disabled (`installment_count=0`)
 - Callback signature validation (`merchant_oid + merchant_salt + status + total_amount`)
@@ -15,7 +15,7 @@ PAYTR Direct API payment provider for Odoo 19 Community (`payment` + `website_sa
 ## Installed Files
 
 - `models/payment_provider.py`: provider fields and capability setup
-- `models/payment_transaction.py`: checkout payload, token generation, status updates
+- `models/payment_transaction.py`: iFrame token request payload, token generation, status updates
 - `controllers/main.py`: return and webhook routes
 - `views/payment_paytr_templates.xml`: redirect form template
 - `views/payment_provider_views.xml`: provider settings form

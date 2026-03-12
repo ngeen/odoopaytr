@@ -33,31 +33,36 @@ class PaymentTransaction(models.Model):
             return {}
 
         try:
-            payload = self._paytr_prepare_checkout_payload()
+            payload = self._paytr_prepare_iframe_payload()
+            iframe_token = self._paytr_request_iframe_token(payload)
         except ValidationError as err:
             self._set_error(str(err))
             return {}
 
-        return {'paytr_checkout_payload': payload}
+        return {
+            'paytr_iframe_payload': payload,
+            'paytr_iframe_token': iframe_token,
+        }
 
     def _get_specific_rendering_values(self, processing_values):
         if self.provider_code != 'paytr':
             return super()._get_specific_rendering_values(processing_values)
 
-        payload = processing_values.get('paytr_checkout_payload')
-        if not payload:
+        iframe_token = processing_values.get('paytr_iframe_token')
+        payload = processing_values.get('paytr_iframe_payload')
+        if not iframe_token:
             try:
-                payload = self._paytr_prepare_checkout_payload()
+                payload = payload or self._paytr_prepare_iframe_payload()
+                iframe_token = self._paytr_request_iframe_token(payload)
             except ValidationError as err:
                 self._set_error(str(err))
                 return {}
 
         return {
-            'api_url': const.PAYTR_CHECKOUT_URL,
-            'paytr_values': payload,
+            'api_url': f'{const.PAYTR_IFRAME_CHECKOUT_URL}/{iframe_token}',
         }
 
-    def _paytr_prepare_checkout_payload(self):
+    def _paytr_prepare_iframe_payload(self):
         self.ensure_one()
         provider = self.provider_id
 
@@ -69,17 +74,19 @@ class PaymentTransaction(models.Model):
             raise ValidationError(_("PAYTR credentials are missing."))
 
         merchant_ok_url, merchant_fail_url = self._paytr_get_return_urls()
-        payment_amount = self._paytr_format_amount(self.amount)
+        payment_amount = str(payment_utils.to_minor_currency_units(self.amount, self.currency_id))
+        no_installment = '1'
+        max_installment = '0'
         payload = {
             'merchant_id': provider.paytr_merchant_id,
             'user_ip': self._paytr_get_customer_ip(),
             'merchant_oid': self.reference,
             'email': self.partner_email,
-            'payment_type': 'card',
             'payment_amount': payment_amount,
             'currency': const.SUPPORTED_PAYTR_CURRENCY,
             'test_mode': '0' if provider.state == 'enabled' else '1',
-            'non_3d': '0',
+            'no_installment': no_installment,
+            'max_installment': max_installment,
             'merchant_ok_url': merchant_ok_url,
             'merchant_fail_url': merchant_fail_url,
             'user_name': self.partner_name or '',
@@ -88,12 +95,23 @@ class PaymentTransaction(models.Model):
             'user_basket': self._paytr_build_user_basket(),
             'debug_on': '0',
             'client_lang': 'tr' if self.env.lang and self.env.lang.startswith('tr') else 'en',
-            'installment_count': '0',
-            'card_type': '',
             'timeout_limit': '30',
         }
         payload['paytr_token'] = self._paytr_compute_token(payload)
         return payload
+
+    def _paytr_request_iframe_token(self, payload):
+        self.ensure_one()
+        response_data = self.provider_id._send_api_request(
+            'POST',
+            const.PAYTR_IFRAME_TOKEN_ENDPOINT,
+            data=payload,
+            reference=self.reference,
+        )
+        iframe_token = response_data.get('token')
+        if not iframe_token:
+            raise ValidationError(_("PAYTR did not return an iframe token."))
+        return iframe_token
 
     def _paytr_get_return_urls(self):
         self.ensure_one()
@@ -146,11 +164,11 @@ class PaymentTransaction(models.Model):
             payload['merchant_oid'],
             payload['email'],
             payload['payment_amount'],
-            payload['payment_type'],
-            payload['installment_count'],
+            payload['user_basket'],
+            payload['no_installment'],
+            payload['max_installment'],
             payload['currency'],
             payload['test_mode'],
-            payload['non_3d'],
         ])
         token_payload = f'{hash_str}{provider.paytr_merchant_salt}'.encode('utf-8')
         digest = hmac.new(
